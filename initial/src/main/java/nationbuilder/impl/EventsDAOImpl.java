@@ -1,14 +1,13 @@
-package nationbuilder;
+package nationbuilder.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import nationbuilder.util.TypeEnum;
+import nationbuilder.dao.EventsDAO;
+import nationbuilder.model.User;
+import nationbuilder.model.UserComment;
+import nationbuilder.model.UserHighFive;
+import nationbuilder.model.UserLeave;
 
-/**
- * Created with IntelliJ IDEA.
- * User: hina
- * Date: 4/1/16
- * Time: 2:31 PM
- * To change this template use File | Settings | File Templates.
- */
 public class EventsDAOImpl implements EventsDAO {
 
     @Override

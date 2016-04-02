@@ -1,18 +1,11 @@
-package nationbuilder;
+package nationbuilder.model;
 
-/**
- * Created with IntelliJ IDEA.
- * User: hina
- * Date: 3/29/16
- * Time: 5:06 PM
- * To change this template use File | Settings | File Templates.
- */
-public class User {
+import nationbuilder.util.TypeEnum;
+
+public class UserLeave {
 
     String user;
-
     TypeEnum type;
-
     String date;
 
     public String getUser() {

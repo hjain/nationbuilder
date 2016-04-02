@@ -1,12 +1,5 @@
-package nationbuilder;
+package nationbuilder.model;
 
-/**
- * Created with IntelliJ IDEA.
- * User: hina
- * Date: 3/29/16
- * Time: 4:52 PM
- * To change this template use File | Settings | File Templates.
- */
 public class Greeting {
 
     private final long id;

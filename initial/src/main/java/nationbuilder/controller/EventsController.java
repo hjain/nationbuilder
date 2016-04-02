@@ -1,7 +1,14 @@
-package nationbuilder;
+package nationbuilder.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nationbuilder.model.EventsCount;
+import nationbuilder.impl.EventsDAOImpl;
+import nationbuilder.util.TypeEnum;
+import nationbuilder.model.User;
+import nationbuilder.model.UserComment;
+import nationbuilder.model.UserHighFive;
+import nationbuilder.model.UserLeave;
 import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -9,14 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
-
-/**
- * Created with IntelliJ IDEA.
- * User: hina
- * Date: 3/29/16
- * Time: 5:05 PM
- * To change this template use File | Settings | File Templates.
- */
 
 @RestController
 @RequestMapping(value = "/events")
@@ -287,7 +286,7 @@ public class EventsController {
 
                 String className = entry.getValue().getClass().getName();
 
-                if (className.equalsIgnoreCase("nationbuilder.User")) {
+                if (className.equalsIgnoreCase("nationbuilder.model.User")) {
                     User userObj = (User) entry.getValue();
 
                     // keep the track of dates
@@ -314,7 +313,7 @@ public class EventsController {
                         System.out.println("here");
                     }
 
-                } else if (className.equalsIgnoreCase("nationbuilder.UserComment")) {
+                } else if (className.equalsIgnoreCase("nationbuilder.model.UserComment")) {
                     UserComment userComment = (UserComment) entry.getValue();
 
                     DateTime dateTime = new DateTime(userComment.getDate());
@@ -341,7 +340,7 @@ public class EventsController {
                     }
 
 
-                } else if (className.equalsIgnoreCase("nationbuilder.UserHighFive")) {
+                } else if (className.equalsIgnoreCase("nationbuilder.model.UserHighFive")) {
 
                     UserHighFive userHighFive = (UserHighFive) entry.getValue();
 

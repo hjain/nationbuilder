@@ -1,12 +1,7 @@
-package nationbuilder;
+package nationbuilder.model;
 
-/**
- * Created with IntelliJ IDEA.
- * User: hina
- * Date: 3/30/16
- * Time: 6:57 PM
- * To change this template use File | Settings | File Templates.
- */
+import nationbuilder.util.TypeEnum;
+
 public class UserHighFive {
 
     String user;

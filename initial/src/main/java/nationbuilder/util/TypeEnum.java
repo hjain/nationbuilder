@@ -1,4 +1,4 @@
-package nationbuilder;
+package nationbuilder.util;
 
 /**
  * Created with IntelliJ IDEA.
