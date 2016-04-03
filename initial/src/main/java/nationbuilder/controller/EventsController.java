@@ -31,7 +31,9 @@ public class EventsController {
 
     Object eventsObjects = new Object();
 
-    TreeMap<DateTime, Object> eventsTreeMap = new TreeMap<DateTime, Object>();
+    TreeMap<String, Object> eventsTreeMap = new TreeMap<String, Object>();
+
+    TreeMap<String, Object> eMap = new TreeMap<String, Object>();
 
     Map<String, Integer> eventsCounts = new HashMap<String, Integer>();
 
@@ -179,7 +181,9 @@ public class EventsController {
                     throw new Exception(INVALID_ACTION);
                 }
 
-                eventsTreeMap.put(dt, eventsObjects);
+                eventsTreeMap.put(eventDate, eventsObjects);
+
+                eMap.put(eventDate, eventsObjects);
 
                 System.out.println("x");
             } catch (Exception e) {
@@ -197,20 +201,20 @@ public class EventsController {
     public @ResponseBody Object[] getAllEvents(@RequestParam("from") String from,
                                                @RequestParam("to") String to) {
 
-        DateTime dateFrom = new DateTime(from);
-        DateTime dateTo = new DateTime(to);
+        SortedMap<String, Object> eventsByRange = new TreeMap<String, Object>();
 
-        SortedMap<DateTime, Object> eventsByRange = new TreeMap<DateTime, Object>();
+        eventsByRange = eventsTreeMap.subMap(from, to);
 
-        eventsByRange = eventsTreeMap.subMap(dateFrom, dateTo);
+        SortedMap<String, Object> eByRange = new TreeMap<String, Object>();
+        eByRange = eMap.subMap(from, to);
 
-        Set<Entry<DateTime, Object>> entrySetByRange = new HashSet<Entry<DateTime, Object>>();
+        Set<Entry<String, Object>> entrySetByRange = new HashSet<Entry<String, Object>>();
         entrySetByRange = eventsByRange.entrySet();
 
         Object[] listEventByRange  = new Object[entrySetByRange.size()];
 
         Integer i = 0;
-        for (Entry<DateTime, Object> entry : eventsByRange.entrySet()) {
+        for (Entry<String, Object> entry : eventsByRange.entrySet()) {
 
 
             listEventByRange[i] = entry.getValue();
@@ -227,23 +231,15 @@ public class EventsController {
                                                        @RequestParam("to") String to,
                                                        @RequestParam(value = "by") String by) throws Exception {
 
-
-        int enters = 0;
-        int leaves = 0;
-        int comments = 0;
-        int highfives = 0;
-        String date = new String();
-
-        DateTime dateFrom = new DateTime(from);
-        DateTime dateTo = new DateTime(to);
-
-        SortedMap<DateTime, Object> eventsByRange = new TreeMap<DateTime, Object>();
+        SortedMap<String, Object> eventsByRange = new TreeMap<String, Object>();
 
         Map<String, EventsCount> resultMap = new HashMap<String, EventsCount>();
 
-        EventsCount eventsCount = new EventsCount();
+        EventsCount eventsCount = new EventsCount(null, 0, 0, 0, 0);
 
-        if (eventsTreeMap.size() == 0) {
+        resultMap.put("events", eventsCount);
+
+      /*  if (eventsTreeMap.size() == 0) {
 
             resultMap.put("events", eventsCount);
             //return resultMap;
@@ -257,7 +253,7 @@ public class EventsController {
 
             resultMap.put("events", eventsCount);
         }
-
+                      */
 
         //ToDo: final result needs to be a hash of list of hash maps
 
@@ -265,36 +261,32 @@ public class EventsController {
 
         Map<String, EventsCount> eventCountMap = new HashMap<String, EventsCount>();
 
-        Set<Entry<DateTime, Object>> entrySetByRange = new HashSet<Entry<DateTime, Object>>();
+        Set<Entry<String, Object>> entrySetByRange = new HashSet<Entry<String, Object>>();
         entrySetByRange = eventsByRange.entrySet();
 
 
-        eventsByRange = eventsTreeMap.subMap(dateFrom, dateTo);
+        eventsByRange = eventsTreeMap.subMap(from, to);
 
         HashMap<String, ArrayList<EventsCount>> test = new HashMap<String, ArrayList<EventsCount>>();
 
         if(by.equals("day")) {
             // get aggregation by date
 
+            for (Entry<String, Object> entry : eventsByRange.entrySet()) {
 
 
-            int i = 0;
-            for (Entry<DateTime, Object> entry : eventsByRange.entrySet()) {
-
-                Object obj = new Object();
-
+                int enters = 0;
+                int leaves = 0;
+                int comments = 0;
+                int highfives = 0;
 
                 String className = entry.getValue().getClass().getName();
 
                 if (className.equalsIgnoreCase("nationbuilder.model.User")) {
                     User userObj = (User) entry.getValue();
 
-                    // keep the track of dates
-                    DateTime dateTime = new DateTime(userObj.getDate());
-
-                    String tempdate1 = dateTime.getYear() + "-" +
-                            dateTime.getMonthOfYear() + "-" +
-                            dateTime.getDayOfMonth()+"T00:00:00Z";
+                    // set time section to zero
+                    String tempdate1 = userObj.getDate().split("T")[0] + "T00:00:00Z"; // dateTime.withTime(0, 0, 0, 0).toString();
 
                     if (eventCountMap.containsKey(tempdate1)) {
 
@@ -306,7 +298,9 @@ public class EventsController {
 
                     } else {
 
-                        EventsCount newEventCount = getNewEventCount(tempdate1, 1, 0, 0, 0);
+                        // EventsCount newEventCount = getNewEventCount(tempdate1, 1, 0, 0, 0);
+
+                        EventsCount newEventCount = new EventsCount(tempdate1, enters + 1, comments, highfives, leaves);
 
                         eventCountMap.put(tempdate1, newEventCount);
 
@@ -316,11 +310,7 @@ public class EventsController {
                 } else if (className.equalsIgnoreCase("nationbuilder.model.UserComment")) {
                     UserComment userComment = (UserComment) entry.getValue();
 
-                    DateTime dateTime = new DateTime(userComment.getDate());
-
-                    String tempdate1 = dateTime.getYear() + "-" +
-                            dateTime.getMonthOfYear() + "-" +
-                            dateTime.getDayOfMonth()+"T00:00:00Z";
+                    String tempdate1 = userComment.getDate().split("T")[0] + "T00:00:00Z";
 
                     if (eventCountMap.containsKey(tempdate1)) {
 
@@ -332,7 +322,9 @@ public class EventsController {
 
                     } else {
 
-                        EventsCount newEventCount = getNewEventCount(tempdate1, 0, 1, 0, 0);
+                        //  EventsCount newEventCount = getNewEventCount(tempdate1, 0, 1, 0, 0);
+
+                        EventsCount newEventCount = new EventsCount(tempdate1, enters, comments + 1, highfives, leaves);
 
                         eventCountMap.put(tempdate1, newEventCount);
 
@@ -344,11 +336,7 @@ public class EventsController {
 
                     UserHighFive userHighFive = (UserHighFive) entry.getValue();
 
-                    DateTime dateTime = new DateTime(userHighFive.getDate());
-
-                    String tempdate1 = dateTime.getYear() + "-" +
-                            dateTime.getMonthOfYear() + "-" +
-                            dateTime.getDayOfMonth()+"T00:00:00Z";
+                    String tempdate1 = userHighFive.getDate().split("T")[0] + "T00:00:00Z";
 
                     if (eventCountMap.containsKey(tempdate1)) {
 
@@ -360,7 +348,9 @@ public class EventsController {
 
                     } else {
 
-                        EventsCount newEventCount = getNewEventCount(tempdate1, 0, 0, 0, 1);
+                        // EventsCount newEventCount = getNewEventCount(tempdate1, 0, 0, 0, 1);
+
+                        EventsCount newEventCount = new EventsCount(tempdate1, enters, comments, highfives + 1, leaves);
 
                         eventCountMap.put(tempdate1, newEventCount);
 
@@ -371,11 +361,7 @@ public class EventsController {
 
                     UserLeave userLeave = (UserLeave) entry.getValue();
 
-                    DateTime dateTime = new DateTime(userLeave.getDate());
-
-                    String tempdate1 = dateTime.getYear() + "-" +
-                            dateTime.getMonthOfYear() + "-" +
-                            dateTime.getDayOfMonth()+"T00:00:00Z";
+                    String tempdate1 = userLeave.getDate().split("T")[0] +"T00:00:00Z";
 
                     if (eventCountMap.containsKey(tempdate1)) {
 
@@ -387,7 +373,9 @@ public class EventsController {
 
                     } else {
 
-                        EventsCount newEventCount = getNewEventCount(tempdate1, 0, 0, 1, 0);
+                      //  EventsCount newEventCount = getNewEventCount(tempdate1, 0, 0, 1, 0);
+
+                        EventsCount newEventCount = new EventsCount(tempdate1, enters, comments, highfives, leaves + 1);
 
                         eventCountMap.put(tempdate1, newEventCount);
 

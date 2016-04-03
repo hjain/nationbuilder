@@ -12,6 +12,16 @@ public class EventsCount {
 
     public Integer comments;
 
+    public EventsCount(){}
+
+    public EventsCount(String date, int enters, int comments, int highfives, int leaves) {
+        this.date = date;
+        this.enters = enters;
+        this.highfives = highfives;
+        this.comments = comments;
+        this.leaves = leaves;
+    }
+
     public String getDate() {
         return date;
     }
