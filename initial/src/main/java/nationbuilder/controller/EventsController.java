@@ -43,10 +43,27 @@ public class EventsController {
     private static final String USER_REENTERED = "User already entered the chat room";
     private static final String INVALID_ACTION = "Action is not permitted";
 
+    private static final String BY_DAY = "T00:00:00Z";
+    private static final String BY_HOUR = ":00:00Z";
+    private static final String BY_MIN = ":00Z";
+
+    private static final String CLASS_USER ="nationbuilder.model.User";
+    private static final String CLASS_USER_COMMENT ="nationbuilder.model.UserComment";
+    private static final String CLASS_USER_HIGHFIVE ="nationbuilder.model.UserHighFive";
+    private static final String CLASS_USER_LEAVE ="nationbuilder.model.UserLeave";
+
+    private static final String DELIMIT_COLON = ":";
+    private static final String DELIMIT_T = "T";
+
+    private static final String HOUR = "hour";
+    private static final String DAY = "day";
+    private static final String MINUTE = "minute";
+    private static final String MIN = "min";
+
     @RequestMapping(method = RequestMethod.POST)
     public String events(@RequestBody String inputJson) throws Exception {
 
-        if (inputJson == null || "".equals(inputJson)) {
+        if (inputJson == null || "".equalsIgnoreCase(inputJson)) {
             throwException("Invalid Input");
         }
 
@@ -62,9 +79,9 @@ public class EventsController {
         if (node.size() < 3) {
             throwException("Invalid Input");
         } else {
-            if(node.get("type").textValue().equals(null) || node.get("type").textValue().equals("")
-                    || node.get("user").textValue().equals("") || node.get("user").textValue().equals(null)
-                    || node.get("date").textValue().equals("") || node.get("date").textValue().equals(null)) {
+            if(node.get("type").textValue().equalsIgnoreCase(null) || node.get("type").textValue().equalsIgnoreCase("")
+                    || node.get("user").textValue().equalsIgnoreCase("") || node.get("user").textValue().equalsIgnoreCase(null)
+                    || node.get("date").textValue().equalsIgnoreCase("") || node.get("date").textValue().equalsIgnoreCase(null)) {
                 throwException(REQUIRED_FIELD_CHECK);
             }
 
@@ -86,7 +103,7 @@ public class EventsController {
             // check for enter and exit
 
             if (userMap.containsKey(nodeUser)) {
-                if (nodeType.equals(TypeEnum.LEAVE.toString())) {
+                if (nodeType.equalsIgnoreCase(TypeEnum.LEAVE.toString())) {
 
                     EventsDAOImpl eventsDAOImpl = new EventsDAOImpl();
 
@@ -99,7 +116,7 @@ public class EventsController {
             } else {
                 // enter and add to userMap
 
-                if(nodeType.equals(TypeEnum.ENTER.toString())) {
+                if(nodeType.equalsIgnoreCase(TypeEnum.ENTER.toString())) {
 
                     EventsDAOImpl eventsDAOImpl = new EventsDAOImpl();
 
@@ -119,12 +136,12 @@ public class EventsController {
                 isError = true;
                 throw new Exception(nodeUser + " " + USER_DOESNT_EXIST);
             } else {
-                if(nodeType.equals(TypeEnum.COMMENT.toString())) {
+                if(nodeType.equalsIgnoreCase(TypeEnum.COMMENT.toString())) {
 
                     EventsDAOImpl eventsDAOImpl = new EventsDAOImpl();
                     userComment = eventsDAOImpl.userComment(node);
 
-                } else if(nodeType.equals(TypeEnum.HIGHFIVE.toString())) {
+                } else if(nodeType.equalsIgnoreCase(TypeEnum.HIGHFIVE.toString())) {
 
                     if (!userMap.containsKey(node.get("otheruser").textValue())) {
                         isError = true;
@@ -155,7 +172,7 @@ public class EventsController {
 
             try {
 
-                if (nodeType.equals(TypeEnum.ENTER.toString())) {
+                if (nodeType.equalsIgnoreCase(TypeEnum.ENTER.toString())) {
 
                     // add user to eventsObject
 
@@ -163,17 +180,17 @@ public class EventsController {
 
                     userMap.put(user.getUser(), user);
 
-                } else if(nodeType.equals(TypeEnum.LEAVE.toString())) {
+                } else if(nodeType.equalsIgnoreCase(TypeEnum.LEAVE.toString())) {
 
                     eventsObjects = userLeave;
 
                     userMap.remove(nodeUser);
 
-                } else if (nodeType.equals(TypeEnum.COMMENT.toString())) {
+                } else if (nodeType.equalsIgnoreCase(TypeEnum.COMMENT.toString())) {
 
                     eventsObjects = userComment;
 
-                } else if (nodeType.equals(TypeEnum.HIGHFIVE.toString())) {
+                } else if (nodeType.equalsIgnoreCase(TypeEnum.HIGHFIVE.toString())) {
 
                     eventsObjects = userHighFive;
 
@@ -237,29 +254,11 @@ public class EventsController {
 
         EventsCount eventsCount = new EventsCount(null, 0, 0, 0, 0);
 
-        resultMap.put("events", eventsCount);
+        //resultMap.put("events", eventsCount);
 
-      /*  if (eventsTreeMap.size() == 0) {
+        SortedMap<String, EventsCount> eventCountMap = new TreeMap<String, EventsCount>();
 
-            resultMap.put("events", eventsCount);
-            //return resultMap;
-        } else {
-            // initialize
-            eventsCount.setDate("");
-            eventsCount.setComments(0);
-            eventsCount.setEnters(0);
-            eventsCount.setHighfives(0);
-            eventsCount.setLeaves(0);
-
-            resultMap.put("events", eventsCount);
-        }
-                      */
-
-        //ToDo: final result needs to be a hash of list of hash maps
-
-        // Todo : get event counts by date
-
-        Map<String, EventsCount> eventCountMap = new HashMap<String, EventsCount>();
+        HashMap<String, ArrayList<EventsCount>> result = new HashMap<String, ArrayList<EventsCount>>();
 
         Set<Entry<String, Object>> entrySetByRange = new HashSet<Entry<String, Object>>();
         entrySetByRange = eventsByRange.entrySet();
@@ -269,163 +268,171 @@ public class EventsController {
 
         HashMap<String, ArrayList<EventsCount>> test = new HashMap<String, ArrayList<EventsCount>>();
 
-        if(by.equals("day")) {
+        if(by.equalsIgnoreCase(DAY)) {
             // get aggregation by date
 
-            for (Entry<String, Object> entry : eventsByRange.entrySet()) {
+            result = getEventSummaryByCondition(by, eventsByRange, eventCountMap);
 
+        } else if(by.equalsIgnoreCase(HOUR)) {
 
-                int enters = 0;
-                int leaves = 0;
-                int comments = 0;
-                int highfives = 0;
+           result = getEventSummaryByCondition(by, eventsByRange, eventCountMap);
 
-                String className = entry.getValue().getClass().getName();
+        } else if(by.equalsIgnoreCase(MINUTE) || by.equalsIgnoreCase(MIN)) {
 
-                if (className.equalsIgnoreCase("nationbuilder.model.User")) {
-                    User userObj = (User) entry.getValue();
-
-                    // set time section to zero
-                    String tempdate1 = userObj.getDate().split("T")[0] + "T00:00:00Z"; // dateTime.withTime(0, 0, 0, 0).toString();
-
-                    if (eventCountMap.containsKey(tempdate1)) {
-
-                        enters = eventCountMap.get(tempdate1).getEnters() + 1;
-
-                        eventCountMap.get(tempdate1).setEnters(enters);
-
-                        System.out.println("check entries : " + eventCountMap.entrySet());
-
-                    } else {
-
-                        // EventsCount newEventCount = getNewEventCount(tempdate1, 1, 0, 0, 0);
-
-                        EventsCount newEventCount = new EventsCount(tempdate1, enters + 1, comments, highfives, leaves);
-
-                        eventCountMap.put(tempdate1, newEventCount);
-
-                        System.out.println("here");
-                    }
-
-                } else if (className.equalsIgnoreCase("nationbuilder.model.UserComment")) {
-                    UserComment userComment = (UserComment) entry.getValue();
-
-                    String tempdate1 = userComment.getDate().split("T")[0] + "T00:00:00Z";
-
-                    if (eventCountMap.containsKey(tempdate1)) {
-
-                        comments = eventCountMap.get(tempdate1).getComments() + 1;
-
-                        eventCountMap.get(tempdate1).setComments(comments);
-
-                        System.out.println("check entries : " + eventCountMap.entrySet());
-
-                    } else {
-
-                        //  EventsCount newEventCount = getNewEventCount(tempdate1, 0, 1, 0, 0);
-
-                        EventsCount newEventCount = new EventsCount(tempdate1, enters, comments + 1, highfives, leaves);
-
-                        eventCountMap.put(tempdate1, newEventCount);
-
-                        System.out.println("here");
-                    }
-
-
-                } else if (className.equalsIgnoreCase("nationbuilder.model.UserHighFive")) {
-
-                    UserHighFive userHighFive = (UserHighFive) entry.getValue();
-
-                    String tempdate1 = userHighFive.getDate().split("T")[0] + "T00:00:00Z";
-
-                    if (eventCountMap.containsKey(tempdate1)) {
-
-                        highfives = eventCountMap.get(tempdate1).getHighfives() + 1;
-
-                        eventCountMap.get(tempdate1).setHighfives(highfives);
-
-                        System.out.println("check entries : " + eventCountMap.entrySet());
-
-                    } else {
-
-                        // EventsCount newEventCount = getNewEventCount(tempdate1, 0, 0, 0, 1);
-
-                        EventsCount newEventCount = new EventsCount(tempdate1, enters, comments, highfives + 1, leaves);
-
-                        eventCountMap.put(tempdate1, newEventCount);
-
-                        System.out.println("here");
-                    }
-
-                } else {
-
-                    UserLeave userLeave = (UserLeave) entry.getValue();
-
-                    String tempdate1 = userLeave.getDate().split("T")[0] +"T00:00:00Z";
-
-                    if (eventCountMap.containsKey(tempdate1)) {
-
-                        leaves = eventCountMap.get(tempdate1).getLeaves() + 1;
-
-                        eventCountMap.get(tempdate1).setLeaves(leaves);
-
-                        System.out.println("check entries : " + eventCountMap.entrySet());
-
-                    } else {
-
-                      //  EventsCount newEventCount = getNewEventCount(tempdate1, 0, 0, 1, 0);
-
-                        EventsCount newEventCount = new EventsCount(tempdate1, enters, comments, highfives, leaves + 1);
-
-                        eventCountMap.put(tempdate1, newEventCount);
-
-                        System.out.println("here");
-                    }
-
-                    // leave
-
-                }
-
-                // get all the keys by date in a result map
-
-
-            }
-
-        } else if(by.equals("hour")) {
-
-        } else if(by.equals("minute")) {
+            result = getEventSummaryByCondition(by, eventsByRange, eventCountMap);
 
         } else {
             throw new Exception(INVALID_ACTION);
         }
 
+        return result;
+    }
 
-        ArrayList<EventsCount> ev = new ArrayList<EventsCount>();
+
+    public String getEventDate(String by, String date) throws Exception {
+
+        String eventKeyDate = new String();
+
+        if (by.equalsIgnoreCase(DAY)) {
+
+            eventKeyDate = date.split(DELIMIT_T)[0] + BY_DAY;
+
+        } else if (by.equalsIgnoreCase(HOUR)) {
+
+            eventKeyDate = date.split(DELIMIT_COLON)[0] + BY_HOUR;
+
+        } else if (by.equalsIgnoreCase(MIN) || by.equalsIgnoreCase(MINUTE)) {
+
+            eventKeyDate = date.split(DELIMIT_COLON)[0] + DELIMIT_COLON + date.split(DELIMIT_COLON)[1] + BY_MIN;
+
+        } else {
+            // invalid option
+            throw new Exception("Invalid By option for Event Summary. Please use hour, day or minute");
+        }
+
+        return eventKeyDate;
+    }
+
+    public HashMap<String, ArrayList<EventsCount>> getEventSummaryByCondition(String by, SortedMap<String, Object> eventsByRange,
+                                           Map<String, EventsCount> eventCountMap) throws Exception {
+
+        for (Entry<String, Object> entry : eventsByRange.entrySet()) {
+
+            int enters = 0;
+            int leaves = 0;
+            int comments = 0;
+            int highfives = 0;
+
+            String className = entry.getValue().getClass().getName();
+
+            if (className.equalsIgnoreCase(CLASS_USER)) {
+                User userObj = (User) entry.getValue();
+
+                // set time section to zero
+                String tempdate1 = getEventDate(by, userObj.getDate()); //.split(DELIMIT_COLON)[0] + BY_HOUR;
+
+                if (eventCountMap.containsKey(tempdate1)) {
+
+                    enters = eventCountMap.get(tempdate1).getEnters() + 1;
+
+                    eventCountMap.get(tempdate1).setEnters(enters);
+
+                } else {
+
+                    EventsCount newEventCount = new EventsCount(tempdate1, enters + 1, comments, highfives, leaves);
+
+                    eventCountMap.put(tempdate1, newEventCount);
+
+                    System.out.println("here");
+                }
+
+            } else if (className.equalsIgnoreCase(CLASS_USER_COMMENT)) {
+                UserComment userComment = (UserComment) entry.getValue();
+
+                String tempdate1 = getEventDate(by, userComment.getDate());
+
+                if (eventCountMap.containsKey(tempdate1)) {
+
+                    comments = eventCountMap.get(tempdate1).getComments() + 1;
+
+                    eventCountMap.get(tempdate1).setComments(comments);
+
+                    System.out.println("check entries : " + eventCountMap.entrySet());
+
+                } else {
+
+                    EventsCount newEventCount = new EventsCount(tempdate1, enters, comments + 1, highfives, leaves);
+
+                    eventCountMap.put(tempdate1, newEventCount);
+
+                    System.out.println("here");
+                }
+
+
+            } else if (className.equalsIgnoreCase(CLASS_USER_HIGHFIVE)) {
+
+                UserHighFive userHighFive = (UserHighFive) entry.getValue();
+
+                String tempdate1 = getEventDate(by, userHighFive.getDate());
+
+                if (eventCountMap.containsKey(tempdate1)) {
+
+                    highfives = eventCountMap.get(tempdate1).getHighfives() + 1;
+
+                    eventCountMap.get(tempdate1).setHighfives(highfives);
+
+                    System.out.println("check entries : " + eventCountMap.entrySet());
+
+                } else {
+
+                    EventsCount newEventCount = new EventsCount(tempdate1, enters, comments, highfives + 1, leaves);
+
+                    eventCountMap.put(tempdate1, newEventCount);
+
+                    System.out.println("here");
+                }
+
+            } else {
+
+                UserLeave userLeave = (UserLeave) entry.getValue();
+
+                String tempdate1 = getEventDate(by, userLeave.getDate());
+
+                if (eventCountMap.containsKey(tempdate1)) {
+
+                    leaves = eventCountMap.get(tempdate1).getLeaves() + 1;
+
+                    eventCountMap.get(tempdate1).setLeaves(leaves);
+
+                    System.out.println("check entries : " + eventCountMap.entrySet());
+
+                } else {
+
+                    EventsCount newEventCount = new EventsCount(tempdate1, enters, comments, highfives, leaves + 1);
+
+                    eventCountMap.put(tempdate1, newEventCount);
+
+                    System.out.println("here");
+                }
+            }
+        }
+
+
+        // prepare the final tree map of aggregated results
+        ArrayList<EventsCount> countEntry = new ArrayList<EventsCount>();
 
         HashMap<String, ArrayList<EventsCount>> result = new HashMap<String, ArrayList<EventsCount>>();
 
         for (Map.Entry<String, EventsCount> entry : eventCountMap.entrySet()) {
 
-            ev.add(entry.getValue());
-
-
+            countEntry.add(entry.getValue());
         }
 
-        result.put("events", ev);
+        result.put("events", countEntry);
 
         return result;
-    }
 
-    public EventsCount getNewEventCount(String date, int enters, int comments, int leaves, int highfives) {
-        EventsCount eventsCount = new EventsCount();
 
-        eventsCount.setHighfives(highfives);
-        eventsCount.setLeaves(leaves);
-        eventsCount.setComments(comments);
-        eventsCount.setDate(date);
-        eventsCount.setEnters(enters);
-
-        return eventsCount;
     }
 
     /**
