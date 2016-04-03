@@ -13,10 +13,6 @@ public class EventsDAOImpl implements EventsDAO {
     @Override
     public boolean userEnter(JsonNode node, User user) throws Exception {
 
-        // isError return
-
-        //User user = new User();
-
         String nodeUser = node.get("user").textValue();
         String nodeDate = node.get("date").textValue();
 

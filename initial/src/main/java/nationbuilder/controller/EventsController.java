@@ -2,13 +2,9 @@ package nationbuilder.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nationbuilder.model.EventsCount;
 import nationbuilder.impl.EventsDAOImpl;
+import nationbuilder.model.*;
 import nationbuilder.util.TypeEnum;
-import nationbuilder.model.User;
-import nationbuilder.model.UserComment;
-import nationbuilder.model.UserHighFive;
-import nationbuilder.model.UserLeave;
 import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -60,8 +56,11 @@ public class EventsController {
     private static final String MINUTE = "minute";
     private static final String MIN = "min";
 
-    @RequestMapping(method = RequestMethod.POST)
-    public String events(@RequestBody String inputJson) throws Exception {
+    private static final String OK = "ok";
+    private static final String ERROR = "error";
+
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json")
+    public @ResponseBody ReturnStatus events(@RequestBody String inputJson) throws Exception {
 
         if (inputJson == null || "".equalsIgnoreCase(inputJson)) {
             throwException("Invalid Input");
@@ -75,6 +74,8 @@ public class EventsController {
         String nodeType = new String();
 
         boolean isError = false;
+
+        ReturnStatus returnStatus = new ReturnStatus(OK);
 
         if (node.size() < 3) {
             throwException("Invalid Input");
@@ -110,7 +111,9 @@ public class EventsController {
                     userLeave = eventsDAOImpl.userLeave(node);
 
                 } else {
-                    isError = true;
+
+                    returnStatus.setStatus(ERROR);
+
                     throw new Exception(nodeUser + " " + USER_REENTERED);
                 }
             } else {
@@ -124,6 +127,8 @@ public class EventsController {
 
                 } else {
                     isError = true;
+
+                    returnStatus.setStatus(ERROR);
                     throw new Exception(nodeUser + " " +USER_DOESNT_EXIST);
                 }
             }
@@ -134,6 +139,9 @@ public class EventsController {
 
             if (!userMap.containsKey(nodeUser)) {
                 isError = true;
+
+                returnStatus.setStatus(ERROR);
+
                 throw new Exception(nodeUser + " " + USER_DOESNT_EXIST);
             } else {
                 if(nodeType.equalsIgnoreCase(TypeEnum.COMMENT.toString())) {
@@ -145,6 +153,8 @@ public class EventsController {
 
                     if (!userMap.containsKey(node.get("otheruser").textValue())) {
                         isError = true;
+
+                        returnStatus.setStatus(ERROR);
                         throw new Exception(nodeUser + " " +OTHER_USER_DOESNT_EXIST);
                     } else {
 
@@ -156,6 +166,8 @@ public class EventsController {
 
                 } else {
                     isError = true;
+
+                    returnStatus.setStatus(ERROR);
                     throw new Exception(INVALID_ACTION);
                 }
             }
@@ -195,6 +207,8 @@ public class EventsController {
                     eventsObjects = userHighFive;
 
                 } else {
+
+                    returnStatus.setStatus(ERROR);
                     throw new Exception(INVALID_ACTION);
                 }
 
@@ -204,16 +218,26 @@ public class EventsController {
 
                 System.out.println("x");
             } catch (Exception e) {
-                isError = true;
+                // isError = true;
+
+                returnStatus.setStatus(ERROR);
+
+                // return "{\"status\": \"error\", \"message\", \"Event couldn't be captured\"}" + "\n";
                 throw new Exception("Event couldn't be captured");
             }
 
         }
 
-        return "{\"status\":"+ status + "}" + "\n";
+        return returnStatus;
 
     }
 
+    /**
+     * get all events in a given range
+     * @param from
+     * @param to
+     * @return
+     */
     @RequestMapping(method = RequestMethod.GET)
     public @ResponseBody Object[] getAllEvents(@RequestParam("from") String from,
                                                @RequestParam("to") String to) {
@@ -233,7 +257,6 @@ public class EventsController {
         Integer i = 0;
         for (Entry<String, Object> entry : eventsByRange.entrySet()) {
 
-
             listEventByRange[i] = entry.getValue();
             i++;
         }
@@ -241,6 +264,15 @@ public class EventsController {
         return listEventByRange;
 
     }
+
+    /**
+     * get events counts by day or hour or min/minute
+     * @param from : from range
+     * @param to : to range
+     * @param by : by [hour, day, min/minute]
+     * @return
+     * @throws Exception
+     */
 
     @RequestMapping(value = "/summary", method = RequestMethod.GET)
     public @ResponseBody
@@ -250,11 +282,7 @@ public class EventsController {
 
         SortedMap<String, Object> eventsByRange = new TreeMap<String, Object>();
 
-        Map<String, EventsCount> resultMap = new HashMap<String, EventsCount>();
-
         EventsCount eventsCount = new EventsCount(null, 0, 0, 0, 0);
-
-        //resultMap.put("events", eventsCount);
 
         SortedMap<String, EventsCount> eventCountMap = new TreeMap<String, EventsCount>();
 
