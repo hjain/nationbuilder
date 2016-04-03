@@ -9,7 +9,7 @@ import nationbuilder.model.UserLeave;
 public interface EventsDAO {
 
 
-    public boolean userEnter(JsonNode node, User user) throws Exception;
+    public User userEnter(JsonNode node, User user) throws Exception;
 
     public UserLeave userLeave(JsonNode node) throws Exception;
 

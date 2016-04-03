@@ -2,6 +2,7 @@ package nationbuilder.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nationbuilder.Exception.ExceptionReturnStatus;
 import nationbuilder.impl.EventsDAOImpl;
 import nationbuilder.model.*;
 import nationbuilder.util.TypeEnum;
@@ -9,19 +10,17 @@ import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 
 @RestController
 @RequestMapping(value = "/events")
-public class EventsController {
+public class EventsController extends ExceptionReturnStatus {
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("YYYY-MM-DD hh:mm:ss");
-
-    // ToDo: Create a list of Users
-
-    List<User> users = new ArrayList<User>();
 
     HashMap<String, User> userMap = new HashMap<String, User>();
 
@@ -30,8 +29,6 @@ public class EventsController {
     TreeMap<String, Object> eventsTreeMap = new TreeMap<String, Object>();
 
     TreeMap<String, Object> eMap = new TreeMap<String, Object>();
-
-    Map<String, Integer> eventsCounts = new HashMap<String, Integer>();
 
     private static final String USER_DOESNT_EXIST = "User doesn't exist in the chat room";
     private static final String OTHER_USER_DOESNT_EXIST = "otheruser doesn't exist";
@@ -60,7 +57,7 @@ public class EventsController {
     private static final String ERROR = "error";
 
     @RequestMapping(method = RequestMethod.POST, produces = "application/json")
-    public @ResponseBody ReturnStatus events(@RequestBody String inputJson) throws Exception {
+    public @ResponseBody ReturnStatus events(@RequestBody String inputJson, HttpServletResponse response) throws Exception {
 
         if (inputJson == null || "".equalsIgnoreCase(inputJson)) {
             throwException("Invalid Input");
@@ -83,10 +80,18 @@ public class EventsController {
             if(node.get("type").textValue().equalsIgnoreCase(null) || node.get("type").textValue().equalsIgnoreCase("")
                     || node.get("user").textValue().equalsIgnoreCase("") || node.get("user").textValue().equalsIgnoreCase(null)
                     || node.get("date").textValue().equalsIgnoreCase("") || node.get("date").textValue().equalsIgnoreCase(null)) {
-                throwException(REQUIRED_FIELD_CHECK);
+
+               return getReturnStatus(response, true, REQUIRED_FIELD_CHECK);
             }
 
             else {
+                // check for date validation format
+                try {
+                    DateTime dt = new DateTime(node.get("date").textValue());
+                } catch (Exception e) {
+                    return getReturnStatus(response, true, "Incorrect date Format");
+                }
+
                 nodeUser = node.get("user").textValue();
                 nodeDate = node.get("date").textValue();
                 nodeType = node.get("type").textValue();
@@ -112,9 +117,12 @@ public class EventsController {
 
                 } else {
 
-                    returnStatus.setStatus(ERROR);
+                    // returnStatus.setStatus(ERROR);
 
-                    throw new Exception(nodeUser + " " + USER_REENTERED);
+                    // throw new Exception(nodeUser + " " + USER_REENTERED);
+
+
+                   return getReturnStatus(response, true, USER_REENTERED);
                 }
             } else {
                 // enter and add to userMap
@@ -123,13 +131,15 @@ public class EventsController {
 
                     EventsDAOImpl eventsDAOImpl = new EventsDAOImpl();
 
-                    isError = eventsDAOImpl.userEnter(node, user);
+                    user = eventsDAOImpl.userEnter(node, user);
 
                 } else {
                     isError = true;
 
-                    returnStatus.setStatus(ERROR);
-                    throw new Exception(nodeUser + " " +USER_DOESNT_EXIST);
+                    // returnStatus.setStatus(ERROR);
+                    // throw new Exception(nodeUser + " " +USER_DOESNT_EXIST);
+
+                   return getReturnStatus(response, true, USER_DOESNT_EXIST);
                 }
             }
 
@@ -138,13 +148,21 @@ public class EventsController {
             // check for comment and highfive
 
             if (!userMap.containsKey(nodeUser)) {
-                isError = true;
+                // isError = true;
 
-                returnStatus.setStatus(ERROR);
+                // returnStatus.setStatus(ERROR);
 
-                throw new Exception(nodeUser + " " + USER_DOESNT_EXIST);
+                // throw new Exception(nodeUser + " " + USER_DOESNT_EXIST);
+
+               return getReturnStatus(response, true, USER_DOESNT_EXIST);
             } else {
                 if(nodeType.equalsIgnoreCase(TypeEnum.COMMENT.toString())) {
+
+
+                    if(node.get("message").textValue().equals("") || node.get("message").textValue().equals(null)) {
+
+                        return getReturnStatus(response, true, "Null Message");
+                    }
 
                     EventsDAOImpl eventsDAOImpl = new EventsDAOImpl();
                     userComment = eventsDAOImpl.userComment(node);
@@ -154,10 +172,16 @@ public class EventsController {
                     if (!userMap.containsKey(node.get("otheruser").textValue())) {
                         isError = true;
 
-                        returnStatus.setStatus(ERROR);
-                        throw new Exception(nodeUser + " " +OTHER_USER_DOESNT_EXIST);
+                        /*returnStatus.setStatus(ERROR);
+                        throw new Exception(nodeUser + " " +OTHER_USER_DOESNT_EXIST); */
+
+                       return getReturnStatus(response, true, OTHER_USER_DOESNT_EXIST);
                     } else {
 
+                        if(node.get("otheruser").textValue().equals("") || node.get("otheruser").textValue().equals(null)) {
+
+                            return getReturnStatus(response, true, OTHER_USER_DOESNT_EXIST);
+                        }
 
                         EventsDAOImpl eventsDAOImpl = new EventsDAOImpl();
                         userHighFive = eventsDAOImpl.userHighFive(node);
@@ -167,8 +191,10 @@ public class EventsController {
                 } else {
                     isError = true;
 
-                    returnStatus.setStatus(ERROR);
-                    throw new Exception(INVALID_ACTION);
+                   /* returnStatus.setStatus(ERROR);
+                    throw new Exception(INVALID_ACTION);  */
+
+                   return getReturnStatus(response, true, INVALID_ACTION);
                 }
             }
 
@@ -179,8 +205,6 @@ public class EventsController {
         if (!isError) {
 
             String eventDate = nodeDate;
-
-            DateTime dt = new DateTime(eventDate);
 
             try {
 
@@ -208,8 +232,10 @@ public class EventsController {
 
                 } else {
 
-                    returnStatus.setStatus(ERROR);
-                    throw new Exception(INVALID_ACTION);
+                   /* returnStatus.setStatus(ERROR);
+                    throw new Exception(INVALID_ACTION);     */
+
+                   return getReturnStatus(response, true, INVALID_ACTION);
                 }
 
                 eventsTreeMap.put(eventDate, eventsObjects);
@@ -220,10 +246,12 @@ public class EventsController {
             } catch (Exception e) {
                 // isError = true;
 
-                returnStatus.setStatus(ERROR);
+               /* returnStatus.setStatus(ERROR);
 
                 // return "{\"status\": \"error\", \"message\", \"Event couldn't be captured\"}" + "\n";
-                throw new Exception("Event couldn't be captured");
+                throw new Exception("Event couldn't be captured");  */
+
+               return getReturnStatus(response, true, "Event couldn't be captured");
             }
 
         }
@@ -278,7 +306,8 @@ public class EventsController {
     public @ResponseBody
     HashMap<String, ArrayList<EventsCount>> getSummary(@RequestParam("from") String from,
                                                        @RequestParam("to") String to,
-                                                       @RequestParam(value = "by") String by) throws Exception {
+                                                       @RequestParam(value = "by") String by,
+                                                       HttpServletResponse response) throws Exception {
 
         SortedMap<String, Object> eventsByRange = new TreeMap<String, Object>();
 
@@ -299,25 +328,23 @@ public class EventsController {
         if(by.equalsIgnoreCase(DAY)) {
             // get aggregation by date
 
-            result = getEventSummaryByCondition(by, eventsByRange, eventCountMap);
+            result = getEventSummaryByCondition(by, eventsByRange, eventCountMap, response);
 
         } else if(by.equalsIgnoreCase(HOUR)) {
 
-           result = getEventSummaryByCondition(by, eventsByRange, eventCountMap);
-
-        } else if(by.equalsIgnoreCase(MINUTE) || by.equalsIgnoreCase(MIN)) {
-
-            result = getEventSummaryByCondition(by, eventsByRange, eventCountMap);
+           result = getEventSummaryByCondition(by, eventsByRange, eventCountMap, response);
 
         } else {
-            throw new Exception(INVALID_ACTION);
+
+            result = getEventSummaryByCondition(by, eventsByRange, eventCountMap, response);
+
         }
 
         return result;
     }
 
 
-    public String getEventDate(String by, String date) throws Exception {
+    public String getEventDate(String by, String date, HttpServletResponse response) throws Exception {
 
         String eventKeyDate = new String();
 
@@ -329,20 +356,18 @@ public class EventsController {
 
             eventKeyDate = date.split(DELIMIT_COLON)[0] + BY_HOUR;
 
-        } else if (by.equalsIgnoreCase(MIN) || by.equalsIgnoreCase(MINUTE)) {
+        } else {
 
             eventKeyDate = date.split(DELIMIT_COLON)[0] + DELIMIT_COLON + date.split(DELIMIT_COLON)[1] + BY_MIN;
 
-        } else {
-            // invalid option
-            throw new Exception("Invalid By option for Event Summary. Please use hour, day or minute");
         }
 
         return eventKeyDate;
     }
 
     public HashMap<String, ArrayList<EventsCount>> getEventSummaryByCondition(String by, SortedMap<String, Object> eventsByRange,
-                                           Map<String, EventsCount> eventCountMap) throws Exception {
+                                           Map<String, EventsCount> eventCountMap,
+                                           HttpServletResponse response) throws Exception {
 
         for (Entry<String, Object> entry : eventsByRange.entrySet()) {
 
@@ -357,7 +382,7 @@ public class EventsController {
                 User userObj = (User) entry.getValue();
 
                 // set time section to zero
-                String tempdate1 = getEventDate(by, userObj.getDate()); //.split(DELIMIT_COLON)[0] + BY_HOUR;
+                String tempdate1 = getEventDate(by, userObj.getDate(), response); //.split(DELIMIT_COLON)[0] + BY_HOUR;
 
                 if (eventCountMap.containsKey(tempdate1)) {
 
@@ -377,7 +402,7 @@ public class EventsController {
             } else if (className.equalsIgnoreCase(CLASS_USER_COMMENT)) {
                 UserComment userComment = (UserComment) entry.getValue();
 
-                String tempdate1 = getEventDate(by, userComment.getDate());
+                String tempdate1 = getEventDate(by, userComment.getDate(), response);
 
                 if (eventCountMap.containsKey(tempdate1)) {
 
@@ -401,7 +426,7 @@ public class EventsController {
 
                 UserHighFive userHighFive = (UserHighFive) entry.getValue();
 
-                String tempdate1 = getEventDate(by, userHighFive.getDate());
+                String tempdate1 = getEventDate(by, userHighFive.getDate(), response);
 
                 if (eventCountMap.containsKey(tempdate1)) {
 
@@ -424,7 +449,7 @@ public class EventsController {
 
                 UserLeave userLeave = (UserLeave) entry.getValue();
 
-                String tempdate1 = getEventDate(by, userLeave.getDate());
+                String tempdate1 = getEventDate(by, userLeave.getDate(), response);
 
                 if (eventCountMap.containsKey(tempdate1)) {
 
@@ -469,7 +494,7 @@ public class EventsController {
      * @throws Exception
      */
     @RequestMapping(value = "/clear", method = RequestMethod.GET)
-    public String clearData() throws Exception {
+    public @ResponseBody ReturnStatus clearData(HttpServletResponse response) throws Exception {
 
         try {
             userMap.clear();
@@ -477,11 +502,13 @@ public class EventsController {
 
         } catch (Exception e) {
 
-            throw new Exception("Events data couldn't be deleted");
+           return getReturnStatus(response, true, "Data couldn't be deleted");
+
+           // throw new Exception("Events data couldn't be deleted");
         }
 
 
-        return "{\"status\": \"ok\"}" + "\n";
+        return new ReturnStatus(OK);
     }
 
     public void throwException(String errorMessage) throws Exception {
@@ -503,5 +530,49 @@ public class EventsController {
 
         return status;
     }
+
+    @RequestMapping(value = "/test", method = RequestMethod.GET)
+    public @ResponseBody ReturnStatus getText(HttpServletResponse res, HttpServletRequest req, @RequestParam("by") String by) {
+        Throwable throwable = (Throwable) req
+                .getAttribute("javax.servlet.error.exception");
+        Integer statusCode = (Integer) req
+                .getAttribute("javax.servlet.error.status_code");
+
+        String servletName = (String) req
+                .getAttribute("javax.servlet.error.servlet_name");
+
+        res.setContentType("application/json");
+
+        try {
+
+            String[] abc = new String[0];
+
+            abc[2] = String.valueOf(1);
+
+        } catch (Exception e) {
+
+            HttpStatus status = HttpStatus.BAD_GATEWAY;
+            res.setStatus(400);
+            ReturnStatus returnStatus = new ReturnStatus(ERROR);
+
+            return returnStatus;
+        }
+
+        return null;
+
+    }
+
+  /*  public @ResponseBody ReturnStatus getReturnStatus(HttpServletResponse response, boolean isError) {
+
+        if (isError) {
+
+            response.setStatus(400);
+
+            return new ReturnStatus(ERROR);
+
+        } else {
+            return new ReturnStatus(OK);
+        }
+    } */
 
 }

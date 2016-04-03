@@ -25,8 +25,10 @@ public class ReturnStatus {
 
     @Override
     public String toString() {
-        return "ReturnStatus{" +
-                "status='" + status + '\'' +
-                '}';
+        return "{" +
+                "\"status\":\"" + status +
+                "\"}";
     }
+
+
 }

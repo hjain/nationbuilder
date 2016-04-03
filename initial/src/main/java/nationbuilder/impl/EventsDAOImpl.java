@@ -1,17 +1,20 @@
 package nationbuilder.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import nationbuilder.util.TypeEnum;
+import nationbuilder.Exception.ExceptionReturnStatus;
 import nationbuilder.dao.EventsDAO;
 import nationbuilder.model.User;
 import nationbuilder.model.UserComment;
 import nationbuilder.model.UserHighFive;
 import nationbuilder.model.UserLeave;
+import nationbuilder.util.TypeEnum;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-public class EventsDAOImpl implements EventsDAO {
+public class EventsDAOImpl extends ExceptionReturnStatus implements EventsDAO {
 
     @Override
-    public boolean userEnter(JsonNode node, User user) throws Exception {
+    public @ResponseBody
+    User userEnter(JsonNode node, User user) throws Exception {
 
         String nodeUser = node.get("user").textValue();
         String nodeDate = node.get("date").textValue();
@@ -19,22 +22,10 @@ public class EventsDAOImpl implements EventsDAO {
         boolean isError = false;
 
         user.setType(TypeEnum.ENTER);
+        user.setUser(nodeUser);
+        user.setDate(nodeDate);
 
-        if(nodeDate.equals(null) || nodeDate.equals("")) {
-            isError = true;
-            throw new Exception("Date is invalid");
-        } else {
-            user.setDate(nodeDate);
-        }
-
-        if(nodeUser.equals(null) || nodeUser.equals("")) {
-            isError = true;
-            throw new Exception("Date is invalid");
-        } else {
-            user.setUser(nodeUser);
-        }
-
-        return isError;
+        return user;
     }
 
     @Override
