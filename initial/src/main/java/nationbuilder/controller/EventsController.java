@@ -10,7 +10,6 @@ import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -531,48 +530,7 @@ public class EventsController extends ExceptionReturnStatus {
         return status;
     }
 
-    @RequestMapping(value = "/test", method = RequestMethod.GET)
-    public @ResponseBody ReturnStatus getText(HttpServletResponse res, HttpServletRequest req, @RequestParam("by") String by) {
-        Throwable throwable = (Throwable) req
-                .getAttribute("javax.servlet.error.exception");
-        Integer statusCode = (Integer) req
-                .getAttribute("javax.servlet.error.status_code");
-
-        String servletName = (String) req
-                .getAttribute("javax.servlet.error.servlet_name");
-
-        res.setContentType("application/json");
-
-        try {
-
-            String[] abc = new String[0];
-
-            abc[2] = String.valueOf(1);
-
-        } catch (Exception e) {
-
-            HttpStatus status = HttpStatus.BAD_GATEWAY;
-            res.setStatus(400);
-            ReturnStatus returnStatus = new ReturnStatus(ERROR);
-
-            return returnStatus;
-        }
-
-        return null;
-
-    }
-
-  /*  public @ResponseBody ReturnStatus getReturnStatus(HttpServletResponse response, boolean isError) {
-
-        if (isError) {
-
-            response.setStatus(400);
-
-            return new ReturnStatus(ERROR);
-
-        } else {
-            return new ReturnStatus(OK);
-        }
-    } */
-
+    // ToDo: check isError stuff
+    // ToDo: document README
+    // ToDo: Test Suite
 }
