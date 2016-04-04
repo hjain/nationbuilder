@@ -31,4 +31,13 @@ public class UserLeave {
     public void setDate(String date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "UserLeave{" +
+                "user='" + user + '\'' +
+                ", type=" + type +
+                ", date='" + date + '\'' +
+                '}';
+    }
 }

@@ -43,4 +43,14 @@ public class UserComment {
     public void setType(TypeEnum type) {
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        return "UserComment{" +
+                "user='" + user + '\'' +
+                ", message='" + message + '\'' +
+                ", date='" + date + '\'' +
+                ", type=" + type +
+                '}';
+    }
 }

@@ -33,4 +33,13 @@ public class User {
     public void setDate(String date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "user='" + user + '\'' +
+                ", type=" + type +
+                ", date='" + date + '\'' +
+                '}';
+    }
 }

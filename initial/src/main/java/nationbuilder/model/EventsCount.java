@@ -61,4 +61,15 @@ public class EventsCount {
     public void setComments(Integer comments) {
         this.comments = comments;
     }
+
+    @Override
+    public String toString() {
+        return "EventsCount{" +
+                "date='" + date + '\'' +
+                ", enters=" + enters +
+                ", leaves=" + leaves +
+                ", highfives=" + highfives +
+                ", comments=" + comments +
+                '}';
+    }
 }

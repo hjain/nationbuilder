@@ -43,4 +43,14 @@ public class UserHighFive {
     public void setDate(String date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "UserHighFive{" +
+                "user='" + user + '\'' +
+                ", otheruser='" + otheruser + '\'' +
+                ", highfive=" + highfive +
+                ", date='" + date + '\'' +
+                '}';
+    }
 }
