@@ -41,7 +41,7 @@ The following message should be displayed, which will confirm that the environme
 INFO 7828 --- [           main] nationbuilder.Application                : Started Application in 10.694 seconds (JVM running for 27.301)
 ```
 
-http://localhost:8080/greeting should result in
+* App Heartbeat : http://localhost:8080/greeting 
 
 ```
 {
@@ -186,6 +186,22 @@ Expected Output
 }
 ]
 }
+```
+
+* GET - Clear all events
+```
+curl -i -H "Content-Type: application/json" -X GET http://localhost:8080/events/clear 
+```
+
+Expected Output
+```
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Content-Type: application/json;charset=UTF-8
+Transfer-Encoding: chunked
+Date: Mon, 04 Apr 2016 04:45:19 GMT
+
+{"status":"ok"}
 ```
 
 ## Built With
