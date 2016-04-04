@@ -2,7 +2,7 @@
 
 This project implements an API to capture a few events that may happen in a messaging service.
  
-## Key Points About the Projext
+## Key Points About the Project
 
 * Data Store - everything is done in memory. Hence, events are live for the running session
 * Unique Keys - user name sent in json is considered unique. So is the date per API call.
